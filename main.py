@@ -11,8 +11,6 @@ HEADERS = {
                   'Chrome/39.0.2171.95 Safari/537.36'
 }
 
-connection = sqlite3.connect("data.db")
-
 
 class Event:
     def scrape(self, url):
@@ -43,24 +41,27 @@ class Email:
             server.sendmail(username, receiver, message)
 
 
+class Database:
 
-def store(data):
-    row = data.split(",")
-    row = [item.strip() for item in row]
-    cursor = connection.cursor()
-    cursor.execute("INSERT INTO events VALUES(?,?,?)", row)
-    connection.commit()
+    def __init__(self, database_path):
+        self.connection = sqlite3.connect(database_path)
 
+    def store(self, data):
+        row = data.split(",")
+        row = [item.strip() for item in row]
+        cursor = self.connection.cursor()
+        cursor.execute("INSERT INTO events VALUES(?,?,?)", row)
+        self.connection.commit()
 
-def read(data):
-    row = data.split(",")
-    row = [item.strip() for item in row]
-    band, city, date = row
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM events WHERE band=? AND city=? AND date=?", (band, city, date))
-    rows = cursor.fetchall()
-    print(rows)
-    return rows
+    def read(self, data):
+        row = data.split(",")
+        row = [item.strip() for item in row]
+        band, city, date = row
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM events WHERE band=? AND city=? AND date=?", (band, city, date))
+        rows = cursor.fetchall()
+        print(rows)
+        return rows
 
 
 if __name__ == "__main__":
@@ -71,9 +72,12 @@ if __name__ == "__main__":
         print(extracted)
 
         if extracted != "No upcoming tours":
-            row = read(extracted)
+            database = Database(database_path="data.db")
+            row = database.read(extracted)
             if not row:
-                store(extracted)
+                database.store(extracted)
                 # email = Email()
                 # email.send(message="New event")
         time.sleep(2)
+
+
