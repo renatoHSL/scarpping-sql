@@ -1,12 +1,15 @@
 import requests
 import selectorlib
 import time
+import sqlite3
 
 URL = "https://programmer100.pythonanywhere.com/"
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/39.0.2171.95 Safari/537.36'
 }
+
+connection = sqlite3.connect("data.db")
 
 
 def scrape(url):
@@ -29,13 +32,17 @@ def get_current_time():
 
 
 def store(data, localtime):
-    with open("data.txt", "a") as file:
-        file.write(f"{localtime}, {data} \n")
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO events VALUES(?,?)", (localtime, data))
+    connection.commit()
 
 
 def read(data):
-    with open("data.txt", "r") as file:
-        return file.read()
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM events WHERE date=? AND temperature=?", data)
+    rows = cursor.fetchall()
+    print(rows)
+    return rows
 
 
 if __name__ == "__main__":
@@ -46,4 +53,3 @@ if __name__ == "__main__":
 
     content = read(extracted)
     store(extracted, time)
-
